@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'unsafe-inline'; script-src 'self' 'unsafe-inline'">
+<style>
+  :root {
+    --fg: rgba(255, 255, 255, .92);
+    --fg-2: rgba(255, 255, 255, .62);
+    --fg-3: rgba(255, 255, 255, .38);
+    --line: rgba(255, 255, 255, .09);
+    --fill: rgba(255, 255, 255, .07);
+    --accent: #7cc4ff;
+    --err: #ff8a80;
+  }
+  * { box-sizing: border-box }
+  html, body { margin: 0; height: 100%; overflow: hidden; background: transparent }
+  body {
+    font: 13px/1.5 -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+    color: var(--fg);
+    -webkit-font-smoothing: antialiased;
+    font-feature-settings: 'kern', 'tnum';
+    cursor: default; user-select: none;
+  }
+
+  /* o card dita o tamanho da janela: largura max-content, altura = conteúdo */
+  #card {
+    position: absolute; top: 0; left: 0;
+    width: max-content; min-width: 220px; max-width: 440px; max-height: 100vh;
+    display: flex; flex-direction: column;
+    background: rgba(18, 18, 22, .38);  /* tinta leve sobre o blur nativo */
+  }
+  #card.has-answer { width: 440px }
+
+  #bar {
+    display: flex; align-items: center; gap: 8px;
+    height: 44px; padding: 0 14px; flex: none;
+    font-size: 12px; color: var(--fg-2); white-space: nowrap;
+  }
+  #card.has-answer #bar { height: 32px; border-bottom: 1px solid var(--line) }
+  #dot { width: 7px; height: 7px; border-radius: 50%; background: var(--fg-3); flex: none }
+  #status { flex: 1; overflow: hidden; text-overflow: ellipsis }
+  #meta { color: var(--fg-3); font-variant-numeric: tabular-nums }
+  kbd {
+    font-family: inherit; font-size: 11px; font-weight: 500; color: var(--fg-2);
+    padding: 1px 5px; border-radius: 4px; background: var(--fill);
+  }
+
+  .busy #dot { background: var(--accent); animation: pulse 1.1s ease-in-out infinite }
+  .done #dot { background: #6ee7a8 }
+  .error #dot { background: var(--err) }
+  @keyframes pulse { 50% { opacity: .3 } }
+
+  #scroll { overflow-y: auto; flex: 1 1 auto; min-height: 0 }
+  #scroll::-webkit-scrollbar { width: 0 }
+  #out { padding: 11px 16px 13px; overflow-wrap: anywhere }
+  #out:empty { display: none }
+  .error #out { color: var(--err) }
+
+  /* tipografia da resposta */
+  #out > :first-child { margin-top: 0 }
+  #out > :last-child { margin-bottom: 0 }
+  p { margin: 0 0 .6em }
+
+  /* hierarquia: a 1ª linha é a resposta; o resto é apoio, mais discreto */
+  #out { color: var(--fg-2) }
+  #out > p:first-child {
+    font-size: 16px; line-height: 1.35; font-weight: 600; letter-spacing: -.012em;
+    color: #fff; margin-bottom: .55em;
+  }
+  #out > p:first-child:not(:only-child) {
+    padding-bottom: .55em; border-bottom: 1px solid var(--line);
+  }
+  #out > p:first-child strong { font-weight: 700 }
+  #out li strong, #out p strong { color: var(--fg) }
+  .error #out > p:first-child { color: var(--err) }
+  h1, h2, h3, h4 { margin: .9em 0 .35em; font-weight: 600; line-height: 1.3; letter-spacing: -.01em }
+  h1 { font-size: 16px } h2 { font-size: 14.5px } h3 { font-size: 13.5px }
+  h4 { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--fg-2) }
+  strong { font-weight: 600; color: #fff }
+  em { color: var(--fg) }
+  .link { color: var(--accent) }
+  ul, ol { margin: 0 0 .6em; padding-left: 1.3em }
+  li { margin: .15em 0 }
+  li::marker { color: var(--fg-3) }
+  hr { border: 0; border-top: 1px solid var(--line); margin: .8em 0 }
+  blockquote { margin: 0 0 .6em; padding-left: 10px; border-left: 2px solid var(--line); color: var(--fg-2) }
+  code {
+    font: 12px/1.45 ui-monospace, 'SF Mono', Menlo, monospace;
+    padding: .1em .35em; border-radius: 4px; background: var(--fill);
+  }
+  pre {
+    position: relative; margin: 0 0 .7em; padding: 9px 11px;
+    border-radius: 7px; background: rgba(0, 0, 0, .28); border: 1px solid var(--line);
+    white-space: pre-wrap; overflow-wrap: anywhere;
+  }
+  pre code { padding: 0; background: none; font-size: 11.5px }
+  pre .lang {
+    position: absolute; top: 5px; right: 8px;
+    font-size: 10px; color: var(--fg-3); text-transform: lowercase;
+  }
+  table { border-collapse: collapse; margin: 0 0 .7em; font-size: 12px; width: 100% }
+  th, td { text-align: left; padding: 4px 8px; border-bottom: 1px solid var(--line); vertical-align: top }
+  th { font-weight: 600; color: var(--fg-2) }
+  tbody tr:last-child td { border-bottom: 0 }
+</style>
+</head>
+<body>
+  <div id="card" class="idle">
+    <div id="bar">
+      <span id="dot"></span>
+      <span id="status"><kbd>⌘⇧Space</kbd>&nbsp; ler a tela</span>
+      <span id="meta"></span>
+    </div>
+    <div id="scroll"><div id="out"></div></div>
+  </div>
+
+  <script src="markdown.js"></script>
+  <script>
+    const $ = (id) => document.getElementById(id)
+    const card = $('card'), status = $('status'), meta = $('meta'), scroll = $('scroll'), out = $('out')
+
+    let text = ''
+    let frame = 0
+
+    function setState(state, label, extra = '') {
+      card.className = state + (out.innerHTML ? ' has-answer' : '')
+      status.textContent = label
+      meta.textContent = extra
+    }
+
+    // re-renderiza no máximo uma vez por frame durante o streaming
+    function paint() {
+      if (frame) return
+      frame = requestAnimationFrame(() => {
+        frame = 0
+        out.innerHTML = renderMarkdown(text)
+        card.classList.toggle('has-answer', !!text)
+      })
+    }
+
+    glance.on('start', ({ model }) => {
+      text = ''
+      out.innerHTML = ''
+      scroll.scrollTop = 0
+      setState('busy', 'lendo a tela…', model)
+    })
+
+    glance.on('chunk', (t) => {
+      if (!text) status.textContent = 'respondendo…'
+      text += t
+      paint()
+    })
+
+    glance.on('done', ({ ms }) => {
+      cancelAnimationFrame(frame); frame = 0
+      out.innerHTML = renderMarkdown(text)
+      setState('done', 'pronto', `${(ms / 1000).toFixed(1)}s`)
+    })
+
+    glance.on('error', (msg) => {
+      text = msg
+      out.innerHTML = renderMarkdown(msg)
+      setState('error', 'erro')
+    })
+
+    glance.on('scroll', (d) => scroll.scrollBy({ top: d, behavior: 'smooth' }))
+
+    // a janela segue o tamanho natural do card (o main limita a altura em 70% da tela)
+    function report() {
+      const w = card.offsetWidth
+      const h = $('bar').offsetHeight + out.offsetHeight
+      glance.size(w, h)
+    }
+    const ro = new ResizeObserver(report)
+    ro.observe(card)
+    ro.observe(out)
+    report()
+  </script>
+</body>
+</html>
