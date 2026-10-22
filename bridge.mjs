@@ -1,21 +1,21 @@
-// glance bridge — usa a conta logada do Claude Code via Agent SDK,
-// o mesmo mecanismo do pi-claude-bridge (@vanillagreen), que roda o
-// Claude Code pelo SDK oficial da Anthropic. Sem API key.
+// glance bridge — uses your logged-in Claude Code account through the official
+// Claude Agent SDK (same approach as pi-claude-bridge by @vanillagreen).
+// No API key needed.
 import os from "node:os"
 import path from "node:path"
 import fs from "node:fs"
 import { query } from "@anthropic-ai/claude-agent-sdk"
 
-export const SYSTEM = `Leia a tela e responda o que estiver sendo perguntado. A resposta aparece num painel pequeno e é lida de relance.
+export const SYSTEM = `Read the screen and answer what is being asked. The answer shows in a small panel and is read at a glance.
 
-Formato, sempre nesta ordem:
-1. Primeira linha: só a resposta, em uma frase curta (máx. ~12 palavras). Sem negrito, sem título, sem rótulo tipo "Resposta:". Múltipla escolha → a letra e a opção (ex.: "B) 42"). Número → o número com unidade.
-2. Depois, só se agregar: até 3 bullets curtos com o porquê ou o passo que importa. Destaque em **negrito** só o termo-chave de cada bullet.
-3. Se for código: um bloco \`\`\`linguagem\`\`\` com o código completo, sem explicação depois.
+Format, always in this order:
+1. First line: only the answer, in one short sentence (max ~12 words). No bold, no heading, no label like "Answer:". Multiple choice → the letter and the option (e.g. "B) 42"). Number → the number with its unit.
+2. Then, only if it adds something: up to 3 short bullets with the why or the step that matters. Put only the key term of each bullet in **bold**.
+3. If it's code: one \`\`\`language\`\`\` block with the complete code, no explanation after it.
 
-Regras: sem preâmbulo, sem repetir a pergunta, sem conclusão nem resumo no fim, sem títulos (#). Na dúvida, corte. Responda no idioma do conteúdo da tela.`
+Rules: no preamble, don't restate the question, no conclusion or summary at the end, no headings (#). When in doubt, cut. Answer in the language of the on-screen content.`
 
-// cwd vazio para não puxar CLAUDE.md nem settings de projeto
+// empty cwd so no CLAUDE.md or project settings get picked up
 const WORKDIR = path.join(os.tmpdir(), "glance")
 fs.mkdirSync(WORKDIR, { recursive: true })
 
@@ -26,7 +26,7 @@ async function* oneMessage(base64Jpeg) {
       role: "user",
       content: [
         { type: "image", source: { type: "base64", media_type: "image/jpeg", data: base64Jpeg } },
-        { type: "text", text: "Responda o que está na tela." },
+        { type: "text", text: "Answer what is on the screen." },
       ],
     },
     parent_tool_use_id: null,
@@ -40,10 +40,10 @@ export async function askClaude(base64Jpeg, { onText, onDone, onError, abortCont
       cwd: WORKDIR,
       model: process.env.GLANCE_MODEL || "sonnet",
       systemPrompt: SYSTEM,
-      tools: [],                  // sem ferramentas: só lê e responde
-      settingSources: [],         // não carrega settings/hooks/MCP do usuário
+      tools: [],                  // no tools: read and answer only
+      settingSources: [],         // don't load the user's settings/hooks/MCP
       maxTurns: 1,
-      includePartialMessages: true, // streaming token a token
+      includePartialMessages: true, // token-by-token streaming
       ...(abortController ? { abortController } : {}),
     },
   })
@@ -58,7 +58,7 @@ export async function askClaude(base64Jpeg, { onText, onDone, onError, abortCont
       }
     } else if (msg.type === "result" && msg.is_error) {
       sawError = true
-      onError?.(String(msg.result ?? "erro no claude"))
+      onError?.(String(msg.result ?? "claude error"))
     }
   }
   if (!sawError) onDone?.()

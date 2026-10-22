@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="pt-BR">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'unsafe-inline'; script-src 'self' 'unsafe-inline'">
@@ -23,12 +23,12 @@
     cursor: default; user-select: none;
   }
 
-  /* o card dita o tamanho da janela: largura max-content, altura = conteúdo */
+  /* the card sets the window size: max-content width, height = content */
   #card {
     position: absolute; top: 0; left: 0;
     width: max-content; min-width: 220px; max-width: 440px; max-height: 100vh;
     display: flex; flex-direction: column;
-    background: rgba(18, 18, 22, .38);  /* tinta leve sobre o blur nativo */
+    background: rgba(18, 18, 22, .38);  /* light tint over the native blur */
   }
   #card.has-answer { width: 440px }
 
@@ -57,12 +57,12 @@
   #out:empty { display: none }
   .error #out { color: var(--err) }
 
-  /* tipografia da resposta */
+  /* answer typography */
   #out > :first-child { margin-top: 0 }
   #out > :last-child { margin-bottom: 0 }
   p { margin: 0 0 .6em }
 
-  /* hierarquia: a 1ª linha é a resposta; o resto é apoio, mais discreto */
+  /* hierarchy: the first line is the answer; the rest is supporting detail, quieter */
   #out { color: var(--fg-2) }
   #out > p:first-child {
     font-size: 16px; line-height: 1.35; font-weight: 600; letter-spacing: -.012em;
@@ -109,7 +109,7 @@
   <div id="card" class="idle">
     <div id="bar">
       <span id="dot"></span>
-      <span id="status"><kbd>⌘⇧Space</kbd>&nbsp; ler a tela</span>
+      <span id="status"><kbd>⌘⇧Space</kbd>&nbsp; read the screen</span>
       <span id="meta"></span>
     </div>
     <div id="scroll"><div id="out"></div></div>
@@ -129,7 +129,7 @@
       meta.textContent = extra
     }
 
-    // re-renderiza no máximo uma vez por frame durante o streaming
+    // re-render at most once per frame while streaming
     function paint() {
       if (frame) return
       frame = requestAnimationFrame(() => {
@@ -143,11 +143,11 @@
       text = ''
       out.innerHTML = ''
       scroll.scrollTop = 0
-      setState('busy', 'lendo a tela…', model)
+      setState('busy', 'reading the screen…', model)
     })
 
     glance.on('chunk', (t) => {
-      if (!text) status.textContent = 'respondendo…'
+      if (!text) status.textContent = 'answering…'
       text += t
       paint()
     })
@@ -155,18 +155,18 @@
     glance.on('done', ({ ms }) => {
       cancelAnimationFrame(frame); frame = 0
       out.innerHTML = renderMarkdown(text)
-      setState('done', 'pronto', `${(ms / 1000).toFixed(1)}s`)
+      setState('done', 'done', `${(ms / 1000).toFixed(1)}s`)
     })
 
     glance.on('error', (msg) => {
       text = msg
       out.innerHTML = renderMarkdown(msg)
-      setState('error', 'erro')
+      setState('error', 'error')
     })
 
     glance.on('scroll', (d) => scroll.scrollBy({ top: d, behavior: 'smooth' }))
 
-    // a janela segue o tamanho natural do card (o main limita a altura em 70% da tela)
+    // the window follows the card's natural size (main caps height at 70% of the screen)
     function report() {
       const w = card.offsetWidth
       const h = $('bar').offsetHeight + out.offsetHeight

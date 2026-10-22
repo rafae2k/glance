@@ -1,0 +1,67 @@
+<!doctype html>
+<!-- Focus test. Open this file in Chrome and use glance while it's in front.
+     glance must never steal focus or send input to the app you're using:
+     no new lines should show up in the log while you trigger, scroll or
+     hide the overlay. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>glance · focus test</title>
+<style>
+  body { font: 14px/1.5 -apple-system, monospace; margin: 0; padding: 20px; background: #fff; }
+  #status { font-size: 22px; font-weight: 700; margin-bottom: 12px; }
+  #log { white-space: pre-wrap; background: #111; color: #0f0;
+         padding: 14px; border-radius: 10px; min-height: 200px; max-height: 70vh; overflow: auto; }
+  .ok { color: #0f0 } .warn { color: #f80; font-weight: 700 }
+</style>
+</head>
+<body>
+<div id="status">hasFocus(): <span id="hf">?</span> · visibility: <span id="vis">?</span></div>
+<div id="log">— focus and input events received by this page —
+
+</div>
+<script>
+const log = document.getElementById('log')
+const hf = document.getElementById('hf'), vis = document.getElementById('vis')
+
+function mark(t, cls) {
+  const span = document.createElement('span')
+  span.className = cls || ''
+  span.textContent = `[${new Date().toLocaleTimeString()}] ${t}\n`
+  log.appendChild(span); log.scrollTop = log.scrollHeight
+  console.log('EVENT:', t)
+}
+
+// focus and visibility — the overlay should never take these away
+addEventListener('blur', () => mark('blur (page lost focus)', 'warn'))
+addEventListener('focus', () => mark('focus'))
+document.addEventListener('visibilitychange', () =>
+  mark(`visibilitychange → ${document.visibilityState}`, 'warn'))
+addEventListener('pagehide', () => mark('pagehide', 'warn'))
+
+// keyboard — glance's shortcuts are global and shouldn't reach the page
+addEventListener('keydown', e => mark(`keydown ${e.key} meta=${e.metaKey} shift=${e.shiftKey}`))
+addEventListener('keyup', e => mark(`keyup ${e.key}`))
+
+// mouse — the overlay is click-through, so clicks land on the page as usual
+addEventListener('mousedown', e => mark(`mousedown @${e.clientX},${e.clientY}`))
+document.addEventListener('mouseleave', () => mark('mouseleave'))
+
+// clipboard — glance never pastes anything
+addEventListener('paste', () => mark('paste', 'warn'))
+addEventListener('copy', () => mark('copy'))
+
+document.addEventListener('fullscreenchange', () => mark('fullscreenchange'))
+
+// periodic check, in case focus changes without an event
+setInterval(() => {
+  hf.textContent = document.hasFocus()
+  vis.textContent = document.visibilityState
+}, 300)
+
+mark('ready. Now trigger glance (Force Click or ⌘⇧Space),')
+mark('scroll it with ⌘⇧↑/↓ and hide it with ⌘⇧H.')
+mark('If no new lines appeared above, glance kept your focus where it was.')
+</script>
+</body>
+</html>

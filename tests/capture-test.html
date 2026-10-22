@@ -1,13 +1,13 @@
 <!doctype html>
-<!-- Espelho local de compartilhamento de tela.
-     Clique em "espelhar", escolha "Tela inteira", e depois
-     dispare o glance (⌘⇧Space) e role o overlay.
-     Se o setContentProtection estiver funcionando, o painel
-     do glance NÃO aparece no espelho — só o que está por baixo dele. -->
-<html lang="pt-BR">
+<!-- Privacy test: a local screen-share mirror.
+     Click "mirror", pick "Entire screen", then trigger glance and scroll it.
+     With content protection on, the glance panel does NOT show up in the
+     mirror — only what's underneath it. Run with GLANCE_DEBUG=1 to see it
+     appear instead. -->
+<html lang="en">
 <head>
 <meta charset="utf-8">
-<title>glance · espelho de captura</title>
+<title>glance · privacy test</title>
 <style>
   body { font: 14px -apple-system; margin: 0; background: #222; color: #eee;
          display: flex; flex-direction: column; align-items: center; padding: 20px; gap: 12px }
@@ -17,13 +17,13 @@
 </style>
 </head>
 <body>
-<h2>Espelho de getDisplayMedia</h2>
-<p>Agora: ⌘⇧Space com o glance, e olhe se o painel preto aparece no espelho.<br>
-    <b>Não deve aparecer.</b> Só o que estiver por baixo dele.</p>
-<button onclick="espelhar()">espelhar</button>
+<h2>Screen-share mirror</h2>
+<p>Trigger glance and check whether its panel shows up in the mirror.
+   <b>It shouldn't</b> — your assistant stays private during calls and recordings.</p>
+<button onclick="mirror()">mirror</button>
 <video id="v" muted autoplay playsinline></video>
 <script>
-async function espelhar() {
+async function mirror() {
   const stream = await navigator.mediaDevices.getDisplayMedia({ video: true })
   document.getElementById('v').srcObject = stream
 }

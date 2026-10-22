@@ -1,5 +1,5 @@
-// Markdown mínimo para respostas curtas: títulos, listas, código, tabela,
-// citação, negrito/itálico. Tolera texto incompleto durante o streaming.
+// Minimal Markdown for short answers: headings, lists, code, tables,
+// quotes, bold/italic. Tolerates incomplete text while streaming.
 ;(() => {
   const esc = (s) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c])
 
@@ -39,7 +39,7 @@
         const lang = line.trim().slice(3).trim()
         const buf = []
         i++
-        // bloco ainda aberto no streaming → vai até o fim do texto
+        // fence still open while streaming → runs to the end of the text
         while (i < lines.length && !isFence(lines[i])) buf.push(lines[i++])
         i++
         const tag = lang ? `<span class="lang">${esc(lang)}</span>` : ''
@@ -71,7 +71,7 @@
         const items = []
         while (i < lines.length && test(lines[i])) {
           let item = lines[i++].replace(/^\s*(?:[-*•]|\d+[.)])\s+/, '')
-          // continuação da linha do item (indentada, sem marcador)
+          // item continuation line (indented, no marker)
           while (i < lines.length && /^\s{2,}\S/.test(lines[i]) && !startsBlock(lines[i])) item += ' ' + lines[i++].trim()
           items.push(`<li>${inline(item)}</li>`)
         }

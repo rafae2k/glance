@@ -1,6 +1,23 @@
 {
   "name": "glance",
   "version": "0.1.0",
+  "description": "Open-source macOS assistant that reads your screen and answers in one line — triggered by a trackpad Force Click.",
+  "license": "MIT",
+  "author": "rafae2k",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rafae2k/glance.git"
+  },
+  "homepage": "https://github.com/rafae2k/glance#readme",
+  "keywords": [
+    "accessibility",
+    "assistive-technology",
+    "macos",
+    "electron",
+    "claude",
+    "screen-reader",
+    "force-touch"
+  ],
   "private": true,
   "main": "main.js",
   "scripts": {

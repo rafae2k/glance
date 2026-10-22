@@ -2,18 +2,18 @@ const { app, BrowserWindow, globalShortcut, desktopCapturer, ipcMain, screen, sy
 const path = require('path')
 const { spawn } = require('child_process')
 
-// GLANCE_DEBUG=1 → aparece em prints/screen share e já dispara uma leitura ao abrir
+// GLANCE_DEBUG=1 → visible in screenshots/screen share and reads the screen on launch
 const DEBUG = process.env.GLANCE_DEBUG === '1'
 const MODEL = process.env.GLANCE_MODEL || 'sonnet'
-const MARGIN = 16 // distância do canto da tela
-// gatilho pelo trackpad: force (clique pesado) | double (duplo clique) | off
+const MARGIN = 16 // distance from the screen corner
+// trackpad trigger: force (Force Click) | double (double click) | off
 const TRIGGER = process.env.GLANCE_TRIGGER || 'force'
 
 let win
-let currentAbort // AbortController da consulta em andamento
+let currentAbort // AbortController for the request in flight
 let askClaudeFn
 
-// o bridge é ESM; carrega por import dinâmico
+// the bridge is ESM; load it with a dynamic import
 async function getAskClaude() {
   askClaudeFn ??= (await import('./bridge.mjs')).askClaude
   return askClaudeFn
@@ -25,20 +25,20 @@ function createWindow() {
     width: 220, height: 44,
     x: workArea.x + workArea.width - 220 - MARGIN, y: workArea.y + MARGIN,
     frame: false, transparent: true, hasShadow: true, resizable: false,
-    vibrancy: 'hud', visualEffectState: 'active', // blur nativo mesmo sem foco
-    focusable: false,          // nunca rouba foco → browser não recebe blur
+    vibrancy: 'hud', visualEffectState: 'active', // native blur even without focus
+    focusable: false,          // never steals focus from the app you're using
     skipTaskbar: true, alwaysOnTop: true, show: false,
     webPreferences: { preload: path.join(__dirname, 'preload.js') },
   })
-  if (!DEBUG) win.setContentProtection(true)        // some do screen share
+  if (!DEBUG) win.setContentProtection(true)        // private: excluded from screen share/recordings
   win.setAlwaysOnTop(true, 'screen-saver')
   win.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true })
-  win.setIgnoreMouseEvents(true)                    // cliques atravessam
+  win.setIgnoreMouseEvents(true)                    // clicks pass through
   win.loadFile('index.html')
   win.once('ready-to-show', () => win.showInactive())
 }
 
-// a janela acompanha o tamanho do conteúdo, ancorada no canto superior direito
+// the window follows the content size, anchored to the top-right corner
 ipcMain.on('size', (_e, { width, height }) => {
   const { workArea } = screen.getPrimaryDisplay()
   const w = Math.ceil(width)
@@ -56,7 +56,7 @@ async function captureAndAsk() {
   if (!win.isVisible()) win.showInactive()
 
   if (systemPreferences.getMediaAccessStatus('screen') !== 'granted') {
-    fail('O macOS bloqueou a Gravação de Tela.\n\nAjustes → Privacidade e Segurança → Gravação de Tela → ative **Electron** e reinicie o app.')
+    fail('macOS blocked Screen Recording.\n\nSystem Settings → Privacy & Security → Screen Recording → enable **Electron** and restart the app.')
     return
   }
 
@@ -66,15 +66,15 @@ async function captureAndAsk() {
   let data
   try {
     const { width, height } = screen.getPrimaryDisplay().size
-    const scale = 1568 / Math.max(width, height)      // tamanho bom p/ visão do Claude
+    const scale = 1568 / Math.max(width, height)      // a good size for Claude's vision
     const [src] = await desktopCapturer.getSources({
       types: ['screen'],
       thumbnailSize: { width: Math.round(width * scale), height: Math.round(height * scale) },
     })
-    if (!src) throw new Error('nenhuma tela para capturar')
+    if (!src) throw new Error('no screen to capture')
     data = src.thumbnail.toJPEG(85).toString('base64')
   } catch (e) {
-    if (!signal.aborted) fail(`Falha na captura: ${e.message || e}`)
+    if (!signal.aborted) fail(`Capture failed: ${e.message || e}`)
     return
   }
 
@@ -91,12 +91,12 @@ async function captureAndAsk() {
   }
 }
 
-// helper nativo (trigger/glance-trigger.swift) avisa cada gesto com uma linha "trigger"
+// native helper (trigger/glance-trigger.swift) prints a "trigger" line per gesture
 function startTrigger() {
   if (TRIGGER === 'off') return
   const bin = path.join(__dirname, 'bin', 'glance-trigger')
   const proc = spawn(bin, [TRIGGER], { stdio: ['pipe', 'pipe', 'inherit'] })
-  proc.on('error', (e) => console.error(`glance: gatilho do trackpad indisponível (${e.message}) — rode npm run build:trigger`))
+  proc.on('error', (e) => console.error(`glance: trackpad trigger unavailable (${e.message}) — run npm run build:trigger`))
 
   let buf = ''
   let last = 0
@@ -107,7 +107,7 @@ function startTrigger() {
       const line = buf.slice(0, i)
       buf = buf.slice(i + 1)
       if (line !== 'trigger') { console.log('glance:', line); continue }
-      if (Date.now() - last < 800) continue            // um gesto, uma leitura
+      if (Date.now() - last < 800) continue            // one gesture, one read
       last = Date.now()
       captureAndAsk()
     }
@@ -121,9 +121,9 @@ function fail(text) {
 }
 
 app.whenReady().then(() => {
-  app.dock?.hide()                                  // sem ícone no Dock
+  app.dock?.hide()                                  // no Dock icon
   createWindow()
-  console.log('glance: permissão de tela =', systemPreferences.getMediaAccessStatus('screen'))
+  console.log('glance: screen permission =', systemPreferences.getMediaAccessStatus('screen'))
   startTrigger()
   globalShortcut.register('CommandOrControl+Shift+Space', captureAndAsk)
   globalShortcut.register('CommandOrControl+Shift+H', () => (win.isVisible() ? win.hide() : win.showInactive()))
