@@ -11,8 +11,6 @@
 
 glance is an open-source macOS assistant that reads your screen and answers in one line. Force Click the trackpad and a small panel in the corner tells you what matters — a bill's due date, how to take a medicine, what an error means — without moving your focus or touching the keyboard.
 
-It started as a research project on assistive technology at [IFSP](https://www.ifsp.edu.br/) (Control and Automation Engineering), aimed at people for whom keyboard shortcuts, dense text or long explanations are a barrier.
-
 ![glance reading a utility bill](docs/images/glance-hero.png)
 
 ## Features
