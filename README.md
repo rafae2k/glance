@@ -1,6 +1,13 @@
-# glance
+<p align="center">
+  <img src="docs/images/icon.png" width="128" height="128" alt="glance icon">
+</p>
 
-**Look at it. Click. Understand it.**
+<h1 align="center">glance</h1>
+
+<p align="center">
+  <b>Look at it. Click. Understand it.</b><br>
+  <a href="https://github.com/rafae2k/glance/releases/latest">Download for macOS</a>
+</p>
 
 glance is an open-source macOS assistant that reads your screen and answers in one line. Force Click the trackpad and a small panel in the corner tells you what matters — a bill's due date, how to take a medicine, what an error means — without moving your focus or touching the keyboard.
 
