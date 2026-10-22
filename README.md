@@ -19,14 +19,27 @@ It started as a research project on assistive technology at [IFSP](https://www.i
 
 ![Force Click to read the screen](docs/images/glance-trigger.png)
 
-## Requirements
+## Install
 
-- macOS with a Force Touch trackpad (for the Force Click trigger)
+1. Install [Claude Code](https://claude.com/claude-code) and log in once by running `claude` in a terminal. glance uses it to talk to Claude, so there's no API key to set up.
+2. Download the DMG for your Mac from the [latest release](https://github.com/rafae2k/glance/releases/latest): `arm64` for Apple Silicon (M1 and later), `x64` for Intel.
+3. Open the DMG and drag **glance** into Applications.
+4. **First launch:** the app isn't notarized by Apple yet, so macOS will block it. Open it once, then go to System Settings → Privacy & Security and click **Open Anyway**. Or run:
+
+   ```bash
+   xattr -dr com.apple.quarantine /Applications/glance.app
+   ```
+
+A small pill appears in the top-right corner. See [Permissions](#permissions) for the two macOS prompts.
+
+## Run from source
+
+Requirements:
+
+- macOS 12+ with a Force Touch trackpad (for the Force Click trigger)
 - Node.js 20+
 - Xcode Command Line Tools (`xcode-select --install`) — for `swiftc`, which builds the trackpad helper
 - [Claude Code](https://claude.com/claude-code), installed and logged in
-
-## Getting started
 
 ```bash
 git clone https://github.com/rafae2k/glance.git
@@ -35,9 +48,17 @@ npm install
 npm start
 ```
 
-The first `npm start` compiles the trackpad helper into `bin/`. A small pill appears in the top-right corner.
+The first `npm start` compiles the trackpad helper into `bin/`.
 
-**Permissions.** The first time you trigger glance, macOS asks for **Screen Recording** for Electron. Enable it in System Settings → Privacy & Security → Screen Recording, then restart the app. If Force Click does nothing, also allow the helper under **Input Monitoring**.
+To build the DMGs yourself (output in `dist/`):
+
+```bash
+npm run dist
+```
+
+## Permissions
+
+The first time you trigger glance, macOS asks for **Screen Recording**. Enable it for **glance** (or **Electron** when running from source) in System Settings → Privacy & Security → Screen Recording, then restart the app. If Force Click does nothing, also allow it under **Input Monitoring**.
 
 **Force Click and Look Up.** By default macOS also uses Force Click for "Look up & data detectors". To avoid both firing at once, go to System Settings → Trackpad and switch it to "Tap with three fingers" or turn it off.
 
@@ -59,6 +80,7 @@ Set these as environment variables when starting:
 | `GLANCE_TRIGGER` | `force` | `force` (Force Click), `double` (double click) or `off` |
 | `GLANCE_MODEL` | `sonnet` | Claude model to use, e.g. `opus` |
 | `GLANCE_DEBUG` | — | `1` makes the panel visible in screen share and reads the screen on launch |
+| `GLANCE_CLAUDE_PATH` | auto | Path to the `claude` binary, if it isn't in a standard location |
 
 ```bash
 GLANCE_TRIGGER=double GLANCE_MODEL=opus npm start
@@ -93,10 +115,11 @@ Two manual checks live in `tests/`. Open them in Chrome while glance is running:
 
 ## Regenerating the images
 
-The images in `docs/images` are rendered from the real `index.html`:
+The images in `docs/images` are rendered from the real `index.html`, and the app icon from a small HTML scene:
 
 ```bash
 npx electron docs/make-images.js . docs/images
+npx electron docs/make-icon.js build/icon.png
 ```
 
 ## Contributing

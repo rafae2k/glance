@@ -19,6 +19,24 @@ Rules: no preamble, don't restate the question, no conclusion or summary at the 
 const WORKDIR = path.join(os.tmpdir(), "glance")
 fs.mkdirSync(WORKDIR, { recursive: true })
 
+// The packaged app doesn't ship the SDK's 270 MB CLI binary; it uses the Claude
+// Code you already have installed (Finder-launched apps get a bare PATH, so look
+// in the usual install spots). In dev, the SDK's bundled binary is used.
+function findClaude() {
+  if (process.env.GLANCE_CLAUDE_PATH) return process.env.GLANCE_CLAUDE_PATH
+  if (process.defaultApp) return undefined // running via `electron .`
+  const home = os.homedir()
+  const candidates = [
+    path.join(home, ".local/bin/claude"),
+    path.join(home, ".claude/local/claude"),
+    "/opt/homebrew/bin/claude",
+    "/usr/local/bin/claude",
+  ]
+  const found = candidates.find((p) => fs.existsSync(p))
+  if (!found) throw new Error("Claude Code not found. Install it from https://claude.com/claude-code, log in once with `claude`, then try again.")
+  return found
+}
+
 async function* oneMessage(base64Jpeg) {
   yield {
     type: "user",
@@ -34,6 +52,7 @@ async function* oneMessage(base64Jpeg) {
 }
 
 export async function askClaude(base64Jpeg, { onText, onDone, onError, abortController }) {
+  const claudePath = findClaude()
   const q = query({
     prompt: oneMessage(base64Jpeg),
     options: {
@@ -45,6 +64,7 @@ export async function askClaude(base64Jpeg, { onText, onDone, onError, abortCont
       maxTurns: 1,
       includePartialMessages: true, // token-by-token streaming
       ...(abortController ? { abortController } : {}),
+      ...(claudePath ? { pathToClaudeCodeExecutable: claudePath } : {}),
     },
   })
 

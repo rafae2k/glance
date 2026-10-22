@@ -23,12 +23,59 @@
   "scripts": {
     "prestart": "test -x bin/glance-trigger || npm run build:trigger",
     "start": "electron .",
-    "build:trigger": "mkdir -p bin && swiftc -O trigger/glance-trigger.swift -o bin/glance-trigger"
+    "build:trigger": "mkdir -p bin && swiftc -O -target arm64-apple-macos12 trigger/glance-trigger.swift -o bin/glance-trigger-arm64 && swiftc -O -target x86_64-apple-macos12 trigger/glance-trigger.swift -o bin/glance-trigger-x64 && lipo -create bin/glance-trigger-arm64 bin/glance-trigger-x64 -output bin/glance-trigger && rm bin/glance-trigger-arm64 bin/glance-trigger-x64",
+    "dist": "npm run build:trigger && electron-builder --mac"
   },
   "devDependencies": {
-    "electron": "^45.0.0"
+    "electron": "^45.0.0",
+    "electron-builder": "^26.15.3"
   },
   "dependencies": {
     "@anthropic-ai/claude-agent-sdk": "^0.3.307"
+  },
+  "build": {
+    "appId": "io.github.rafae2k.glance",
+    "productName": "glance",
+    "copyright": "Copyright © 2026 rafae2k",
+    "files": [
+      "main.js",
+      "preload.js",
+      "bridge.mjs",
+      "index.html",
+      "markdown.js",
+      "package.json",
+      "!**/node_modules/@anthropic-ai/claude-agent-sdk-*{,/**/*}"
+    ],
+    "extraResources": [
+      {
+        "from": "bin/glance-trigger",
+        "to": "bin/glance-trigger"
+      }
+    ],
+    "mac": {
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "arm64",
+            "x64"
+          ]
+        }
+      ],
+      "category": "public.app-category.productivity",
+      "minimumSystemVersion": "12.0",
+      "identity": "-",
+      "extendInfo": {
+        "LSUIElement": true
+      },
+      "hardenedRuntime": false
+    },
+    "dmg": {
+      "title": "glance ${version}",
+      "artifactName": "glance-${version}-${arch}.dmg"
+    },
+    "directories": {
+      "output": "dist"
+    }
   }
 }

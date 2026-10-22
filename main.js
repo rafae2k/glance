@@ -56,7 +56,8 @@ async function captureAndAsk() {
   if (!win.isVisible()) win.showInactive()
 
   if (systemPreferences.getMediaAccessStatus('screen') !== 'granted') {
-    fail('macOS blocked Screen Recording.\n\nSystem Settings → Privacy & Security → Screen Recording → enable **Electron** and restart the app.')
+    const name = app.isPackaged ? 'glance' : 'Electron'
+    fail(`macOS blocked Screen Recording.\n\nSystem Settings → Privacy & Security → Screen Recording → enable **${name}** and restart the app.`)
     return
   }
 
@@ -94,7 +95,9 @@ async function captureAndAsk() {
 // native helper (trigger/glance-trigger.swift) prints a "trigger" line per gesture
 function startTrigger() {
   if (TRIGGER === 'off') return
-  const bin = path.join(__dirname, 'bin', 'glance-trigger')
+  const bin = app.isPackaged
+    ? path.join(process.resourcesPath, 'bin', 'glance-trigger')
+    : path.join(__dirname, 'bin', 'glance-trigger')
   const proc = spawn(bin, [TRIGGER], { stdio: ['pipe', 'pipe', 'inherit'] })
   proc.on('error', (e) => console.error(`glance: trackpad trigger unavailable (${e.message}) — run npm run build:trigger`))
 
